@@ -1,0 +1,15 @@
+{
+    "ScorerHttpMonitor" : {
+        "eventType" : "HttpRequest",
+        "filter" : {
+            "startsWith" :{
+                "requestUri" : "/v1/scorer"
+            }
+        },
+        "minFiveMinuteRate" : 100
+    },
+    "PrsMessageMonitor" : {
+        "eventType" : "PrsMessage",
+        "minFiveMinuteRate" : 100
+    }
+}
