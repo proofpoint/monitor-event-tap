@@ -15,22 +15,20 @@
  */
 package com.proofpoint.event.monitor;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.TypeLiteral;
 
 import javax.inject.Singleton;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 import static com.proofpoint.configuration.ConfigurationModule.bindConfig;
-import static com.proofpoint.json.JsonCodecBinder.jsonCodecBinder;
 
-public class MainModule
+public class AmazonModule
         implements Module
 {
     public void configure(Binder binder)
@@ -38,22 +36,21 @@ public class MainModule
         binder.requireExplicitBindings();
         binder.disableCircularProxies();
 
-        binder.bind(MonitorEventTapResource.class).in(Scopes.SINGLETON);
-        binder.bind(MonitorLoader.class).in(Scopes.SINGLETON);
-        binder.bind(MonitorsProvider.class).in(Scopes.SINGLETON);
-        binder.bind(new TypeLiteral<Set<Monitor>>()
-        {
-        }).toProvider(MonitorsProvider.class).in(Scopes.SINGLETON);
-
+        binder.bind(Alerter.class).to(AmazonEmailAlerter.class).in(Scopes.SINGLETON);
         bindConfig(binder).to(MonitorConfig.class);
-        jsonCodecBinder(binder).bindMapJsonCodec(String.class, MonitorJson.class);
     }
 
     @Provides
     @Singleton
-    @MonitorExecutorService
-    public ScheduledExecutorService createMonitorExecutorService()
+    private AmazonSimpleEmailService provideAmazonS3(AWSCredentials credentials)
     {
-        return Executors.newScheduledThreadPool(5, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("monitor-%s").build());
+        return new AmazonSimpleEmailServiceClient(credentials);
+    }
+
+    @Provides
+    @Singleton
+    private AWSCredentials provideProviderCredentials(AmazonConfig config)
+    {
+        return new BasicAWSCredentials(config.getAwsAccessKey(), config.getAwsSecretKey());
     }
 }

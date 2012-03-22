@@ -1,15 +1,19 @@
 package com.proofpoint.event.monitor;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import com.google.inject.Module;
+import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
 import com.proofpoint.configuration.ConfigurationFactory;
 import com.proofpoint.configuration.ConfigurationModule;
 import com.proofpoint.discovery.client.DiscoveryModule;
+import com.proofpoint.event.monitor.InMemoryAlerter.InMemoryAlert;
 import com.proofpoint.experimental.jmx.JmxHttpModule;
 import com.proofpoint.http.server.testing.TestingHttpServer;
 import com.proofpoint.http.server.testing.TestingHttpServerModule;
@@ -56,6 +60,14 @@ public class TestServer
                 new JmxModule(),
                 new DiscoveryModule(),
                 new MainModule(),
+                new Module()
+                {
+                    @Override
+                    public void configure(Binder binder)
+                    {
+                        binder.bind(Alerter.class).to(InMemoryAlerter.class).in(Scopes.SINGLETON);
+                    }
+                },
                 new ConfigurationModule(new ConfigurationFactory(config)));
 
         server = injector.getInstance(TestingHttpServer.class);
