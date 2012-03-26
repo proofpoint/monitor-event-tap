@@ -33,11 +33,11 @@ public class MonitorsProvider implements Provider<Set<Monitor>>
     private final HttpServerInfo httpServerInfo;
     private final String flowInfo;
     private final Announcer announcer;
-    private final MBeanServer mbeanServer;
 
     private Set<Monitor> monitors;
     private final List<ServiceAnnouncement> announcements = newArrayList();
     private final List<String> mbeanNames = newArrayList();
+    private final MBeanExporter exporter;
 
     @Inject
     public MonitorsProvider(MonitorLoader monitorLoader,
@@ -59,7 +59,13 @@ public class MonitorsProvider implements Provider<Set<Monitor>>
         flowInfo = nodeInfo.getNodeId();
 
         this.announcer = announcer;
-        this.mbeanServer = mbeanServer;
+
+        if (mbeanServer != null) {
+            exporter = new MBeanExporter(mbeanServer);
+        }
+        else {
+            exporter = null;
+        }
     }
 
     public MonitorsProvider(MonitorLoader monitorLoader,
@@ -80,7 +86,13 @@ public class MonitorsProvider implements Provider<Set<Monitor>>
         this.flowInfo = flowInfo;
 
         this.announcer = announcer;
-        this.mbeanServer = mbeanServer;
+
+        if (mbeanServer != null) {
+            exporter = new MBeanExporter(mbeanServer);
+        }
+        else {
+            exporter = null;
+        }
     }
 
     @Override
@@ -127,8 +139,7 @@ public class MonitorsProvider implements Provider<Set<Monitor>>
             }
         }
 
-        if (mbeanServer != null) {
-            MBeanExporter exporter = new MBeanExporter(mbeanServer);
+        if (exporter != null) {
             for (Monitor monitor : monitors) {
                 String name = generatedNameOf(Monitor.class, named(monitor.getName()));
                 exporter.export(name, monitor);
@@ -150,11 +161,11 @@ public class MonitorsProvider implements Provider<Set<Monitor>>
             }
         }
 
-        if (mbeanServer != null) {
+        if (exporter != null) {
             for (String name : mbeanNames) {
                 try {
-                    ObjectName objectName = new ObjectName(name);
-                    mbeanServer.unregisterMBean(objectName);
+                    // TODO: use unexportAll when jmxutils is upgraded to 1.11+
+                    exporter.unexport(name);
                 }
                 catch (Exception ignored) {
                 }
