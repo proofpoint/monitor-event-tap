@@ -6,10 +6,10 @@
                 "requestUri" : "/v1/scorer"
             }
         },
-        "minFiveMinuteRate" : 100
+        "minOneMinuteRate" : 100
     },
     "PrsMessageMonitor" : {
         "eventType" : "PrsMessage",
-        "minFiveMinuteRate" : 100
+        "minOneMinuteRate" : 100
     }
 }

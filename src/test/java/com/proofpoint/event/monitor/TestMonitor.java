@@ -109,9 +109,9 @@ public class TestMonitor
 
         alerter.getAlerts().clear();
 
-        // tick off 50 minutes in 5 second intervals
+        // tick off 5 minutes in 5 second intervals
         long fiveSecondIntervalsIn5Minutes = TimeUnit.MINUTES.toSeconds(5) / 5;
-        for (int i = 0; i < fiveSecondIntervalsIn5Minutes * 10; i++) {
+        for (int i = 0; i < fiveSecondIntervalsIn5Minutes; i++) {
             monitor.getEvents().tick();
         }
         monitor.checkState();

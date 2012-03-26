@@ -20,11 +20,11 @@ public class Monitor
     private final Predicate<Event> filter;
     private final Alerter alerter;
     private final CounterStat counterStat;
-    private final double minFiveMinuteRate;
+    private final double minOneMinuteRate;
     private final AtomicBoolean failed = new AtomicBoolean();
     private ScheduledFuture<?> scheduledFuture;
 
-    public Monitor(String name, String eventType, ScheduledExecutorService executor, Predicate<Event> filter, double minFiveMinuteRate, Alerter alerter)
+    public Monitor(String name, String eventType, ScheduledExecutorService executor, Predicate<Event> filter, double minOneMinuteRate, Alerter alerter)
     {
         this.name = name;
         this.eventType = eventType;
@@ -32,7 +32,7 @@ public class Monitor
         this.filter = filter;
         this.alerter = alerter;
         counterStat = new CounterStat(executor);
-        this.minFiveMinuteRate = minFiveMinuteRate;
+        this.minOneMinuteRate = minOneMinuteRate;
     }
 
     @PostConstruct
@@ -84,17 +84,17 @@ public class Monitor
     @Managed
     public void checkState()
     {
-        double fiveMinuteRate = counterStat.getFiveMinuteRate();
-        if (fiveMinuteRate < minFiveMinuteRate) {
+        double oneMinuteRate = counterStat.getOneMinuteRate();
+        if (oneMinuteRate < minOneMinuteRate) {
             if (failed.compareAndSet(false, true)) {
                 // fire error message
-                alerter.failed(name, String.format("FAILED: Expected fiveMinuteRate to be greater than %s, but was %s", minFiveMinuteRate, fiveMinuteRate));
+                alerter.failed(name, String.format("FAILED: Expected oneMinuteRate to be greater than %s, but was %s", minOneMinuteRate, oneMinuteRate));
             }
         }
         else {
             if (failed.compareAndSet(true, false)) {
                 // fire recovery message
-                alerter.recovered(name, String.format("RECOVERED: The fiveMinuteRate is now greater than %s", minFiveMinuteRate));
+                alerter.recovered(name, String.format("RECOVERED: The oneMinuteRate is now greater than %s", minOneMinuteRate));
             }
         }
     }
