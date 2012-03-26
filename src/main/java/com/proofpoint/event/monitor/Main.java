@@ -50,6 +50,7 @@ public class Main
                 new JmxHttpRpcModule(),
                 new LogJmxModule(),
                 new TraceTokenModule(),
+                new AmazonModule(),
                 new MainModule());
 
         try {

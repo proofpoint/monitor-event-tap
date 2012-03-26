@@ -17,6 +17,8 @@ package com.proofpoint.event.monitor;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient;
 import com.google.inject.Binder;
@@ -37,7 +39,9 @@ public class AmazonModule
         binder.disableCircularProxies();
 
         binder.bind(Alerter.class).to(AmazonEmailAlerter.class).in(Scopes.SINGLETON);
-        bindConfig(binder).to(MonitorConfig.class);
+        bindConfig(binder).to(AmazonConfig.class);
+
+        binder.bind(CloudWatchUpdater.class).in(Scopes.SINGLETON);
     }
 
     @Provides
@@ -45,6 +49,13 @@ public class AmazonModule
     private AmazonSimpleEmailService provideAmazonS3(AWSCredentials credentials)
     {
         return new AmazonSimpleEmailServiceClient(credentials);
+    }
+
+    @Provides
+    @Singleton
+    private AmazonCloudWatch provideAmazonCloudWatch(AWSCredentials credentials)
+    {
+        return new AmazonCloudWatchClient(credentials);
     }
 
     @Provides
