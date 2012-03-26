@@ -40,9 +40,7 @@ public class MainModule
 
         binder.bind(MonitorEventTapResource.class).in(Scopes.SINGLETON);
         binder.bind(MonitorLoader.class).in(Scopes.SINGLETON);
-        binder.bind(new TypeLiteral<Set<Monitor>>()
-        {
-        }).toProvider(MonitorsProvider.class).in(Scopes.SINGLETON);
+        binder.bind(new TypeLiteral<Set<Monitor>>() {}).toProvider(MonitorsProvider.class).in(Scopes.SINGLETON);
 
         bindConfig(binder).to(MonitorConfig.class);
         jsonCodecBinder(binder).bindMapJsonCodec(String.class, MonitorJson.class);
