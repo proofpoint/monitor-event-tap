@@ -40,7 +40,6 @@ public class MainModule
 
         binder.bind(MonitorEventTapResource.class).in(Scopes.SINGLETON);
         binder.bind(MonitorLoader.class).in(Scopes.SINGLETON);
-        binder.bind(MonitorsProvider.class).in(Scopes.SINGLETON);
         binder.bind(new TypeLiteral<Set<Monitor>>()
         {
         }).toProvider(MonitorsProvider.class).in(Scopes.SINGLETON);
