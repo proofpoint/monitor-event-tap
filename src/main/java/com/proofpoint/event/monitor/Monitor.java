@@ -38,26 +38,28 @@ public class Monitor
     @PostConstruct
     public synchronized void start()
     {
-        counterStat.start();
-        scheduledFuture = executor.scheduleAtFixedRate(new Runnable()
-        {
-            @Override
-            public void run()
+        if (scheduledFuture == null) {
+            scheduledFuture = executor.scheduleAtFixedRate(new Runnable()
             {
-                checkState();
-            }
-        }, 5 * 60, 30, TimeUnit.SECONDS);
+                @Override
+                public void run()
+                {
+                    checkState();
+                }
+            }, 5 * 60, 30, TimeUnit.SECONDS);
+            counterStat.start();
+        }
     }
 
     @PreDestroy
     public synchronized void stop()
     {
-        counterStat.stop();
-
         if (scheduledFuture != null) {
             scheduledFuture.cancel(true);
             scheduledFuture = null;
         }
+
+        counterStat.stop();
     }
 
     @Managed

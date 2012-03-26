@@ -28,16 +28,27 @@ public class CounterStat
     }
 
     @PostConstruct
-    public void start()
+    public synchronized void start()
     {
-        future = executor.scheduleAtFixedRate(new Runnable()
-        {
-            @Override
-            public void run()
+        if (future == null) {
+            future = executor.scheduleAtFixedRate(new Runnable()
             {
-                tick();
-            }
-        }, 5, 5, TimeUnit.SECONDS);
+                @Override
+                public void run()
+                {
+                    tick();
+                }
+            }, 5, 5, TimeUnit.SECONDS);
+        }
+    }
+
+    @PreDestroy
+    public synchronized void stop()
+    {
+        if (future != null) {
+            future.cancel(false);
+            future = null;
+        }
     }
 
     @VisibleForTesting
@@ -46,12 +57,6 @@ public class CounterStat
         oneMinute.tick();
         fiveMinute.tick();
         fifteenMinute.tick();
-    }
-
-    @PreDestroy
-    public void stop()
-    {
-        future.cancel(false);
     }
 
     public void update(long count)
