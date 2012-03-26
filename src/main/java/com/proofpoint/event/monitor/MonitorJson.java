@@ -91,12 +91,13 @@ public class MonitorJson
 
         public Predicate<Event> toPredicate()
         {
+            if (startsWith.isEmpty()) {
+                return Predicates.alwaysTrue();
+            }
+
             List<Predicate<Event>> and = new ArrayList<Predicate<Event>>();
             for (final Entry<String, String> startWithEntry : startsWith.entrySet()) {
                 and.add(new StartsWithEventPredicate(startWithEntry.getKey(), startWithEntry.getValue()));
-            }
-            if (and.isEmpty()) {
-                return Predicates.alwaysTrue();
             }
             return Predicates.and(and);
         }
