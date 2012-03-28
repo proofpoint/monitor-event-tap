@@ -25,12 +25,10 @@ import com.proofpoint.http.server.HttpServerInfo;
 import com.proofpoint.node.NodeInfo;
 import org.weakref.jmx.MBeanExporter;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.management.MBeanServer;
-import javax.management.ObjectName;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -123,16 +121,6 @@ public class MonitorsProvider implements Provider<Set<Monitor>>
             }
         }
 
-        return monitors;
-    }
-
-    @PostConstruct
-    public synchronized void start()
-    {
-        if (monitors == null) {
-            return;
-        }
-
         for (Monitor monitor : monitors) {
             monitor.start();
         }
@@ -161,6 +149,8 @@ public class MonitorsProvider implements Provider<Set<Monitor>>
                 mbeanNames.add(name);
             }
         }
+
+        return monitors;
     }
 
     @PreDestroy
