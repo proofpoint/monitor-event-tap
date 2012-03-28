@@ -44,7 +44,7 @@ public class MonitorsProvider implements Provider<Set<Monitor>>
     private final MonitorLoader monitorLoader;
     private final String monitorRulesFile;
     private final HttpServerInfo httpServerInfo;
-    private final String flowInfo;
+    private final String flowId;
     private final Announcer announcer;
 
     private Set<Monitor> monitors;
@@ -69,7 +69,7 @@ public class MonitorsProvider implements Provider<Set<Monitor>>
         monitorRulesFile = config.getMonitorRulesFile();
 
         this.httpServerInfo = httpServerInfo;
-        flowInfo = nodeInfo.getNodeId();
+        flowId = nodeInfo.getNodeId();
 
         this.announcer = announcer;
 
@@ -84,19 +84,19 @@ public class MonitorsProvider implements Provider<Set<Monitor>>
     public MonitorsProvider(MonitorLoader monitorLoader,
             String monitorRulesFile,
             HttpServerInfo httpServerInfo,
-            String flowInfo,
+            String flowId,
             Announcer announcer,
             MBeanServer mbeanServer)
     {
         Preconditions.checkNotNull(monitorLoader, "monitorLoader is null");
         Preconditions.checkNotNull(monitorRulesFile, "monitorRulesFile is null");
         Preconditions.checkNotNull(httpServerInfo, "httpServerInfo is null");
-        Preconditions.checkNotNull(flowInfo, "flowInfo is null");
+        Preconditions.checkNotNull(flowId, "flowInfo is null");
 
         this.monitorLoader = monitorLoader;
         this.monitorRulesFile = monitorRulesFile;
         this.httpServerInfo = httpServerInfo;
-        this.flowInfo = flowInfo;
+        this.flowId = flowId;
 
         this.announcer = announcer;
 
@@ -134,7 +134,8 @@ public class MonitorsProvider implements Provider<Set<Monitor>>
             for (String eventType : eventTypes) {
                 ServiceAnnouncement announcement = ServiceAnnouncement.serviceAnnouncement("eventTap")
                         .addProperty("http", httpServerInfo.getHttpUri().toString() + "/v1/event")
-                        .addProperty("tapId", flowInfo)
+                        .addProperty("tapId", flowId)
+                        .addProperty("flowId", flowId)
                         .addProperty("eventType", eventType)
                         .build();
                 announcer.addServiceAnnouncement(announcement);
