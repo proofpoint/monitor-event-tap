@@ -1,13 +1,13 @@
 {
     "ScorerHttpMonitor" : {
         "eventType" : "HttpRequest",
-        "filter" : {
-            "startsWith" :{
-                "requestUri" : "/v1/scorer",
-                "responseCode" : "2"
-            }
-        },
+        "eventFilter" : "requestUri.startsWith('/v1/scorer') && responseCode >= 200 && responseCode < 300" ,
         "minOneMinuteRate" : 100
+    },
+    "ScorerHttpErrorMonitor" : {
+        "eventType" : "HttpRequest",
+        "eventFilter" : "requestUri.startsWith('/v1/scorer') && (responseCode < 200 || responseCode >= 300)" ,
+        "maxOneMinuteRate" : 1
     },
     "PrsMessageMonitor" : {
         "eventType" : "PrsMessage",

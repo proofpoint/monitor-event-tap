@@ -15,10 +15,8 @@
  */
 package com.proofpoint.event.monitor;
 
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.proofpoint.event.monitor.EventPredicates.EventTypeEventPredicate;
 import com.proofpoint.event.monitor.InMemoryAlerter.InMemoryAlert;
 import org.joda.time.DateTime;
 import org.testng.Assert;
@@ -59,7 +57,7 @@ public class TestMonitor
     {
 
         InMemoryAlerter alerter = new InMemoryAlerter();
-        Monitor monitor = new Monitor("foo", "event", executor, Predicates.<Event>alwaysTrue(), 1.0, 2.0, alerter);
+        Monitor monitor = new Monitor("foo", "event", executor, new EventPredicate("event", "true"), 1.0, 2.0, alerter);
         Assert.assertEquals(monitor.getName(), "foo");
         Assert.assertEquals(monitor.getEventType(), "event");
         Assert.assertEquals(monitor.getMinimumOneMinuteRate(), 1.0);
@@ -72,7 +70,7 @@ public class TestMonitor
     public void testProcessEvents()
     {
         InMemoryAlerter alerter = new InMemoryAlerter();
-        Monitor monitor = new Monitor("foo", "event", executor, Predicates.<Event>alwaysTrue(), 1.0, 2.0, alerter);
+        Monitor monitor = new Monitor("foo", "event", executor, new EventPredicate("event", "true"), 1.0, 2.0, alerter);
 
         monitor.processEvents(nCopies(100, new Event("event", "id", "host", new DateTime(), ImmutableMap.<String, Object>of())));
         Assert.assertEquals(monitor.getEvents().getCount(), 100);
@@ -82,7 +80,7 @@ public class TestMonitor
     public void testFilterEvents()
     {
         InMemoryAlerter alerter = new InMemoryAlerter();
-        Monitor monitor = new Monitor("foo", "event", executor, new EventTypeEventPredicate("event"), 1.0, 2.0, alerter);
+        Monitor monitor = new Monitor("foo", "event", executor, new EventPredicate("event", "true"), 1.0, 2.0, alerter);
 
         monitor.processEvents(concat(
                 nCopies(100, new Event("event", "id", "host", new DateTime(), ImmutableMap.<String, Object>of())),
@@ -96,7 +94,7 @@ public class TestMonitor
             throws Exception
     {
         InMemoryAlerter alerter = new InMemoryAlerter();
-        Monitor monitor = new Monitor("foo", "event", executor, Predicates.<Event>alwaysTrue(), 2.0, null, alerter);
+        Monitor monitor = new Monitor("foo", "event", executor, new EventPredicate("event", "true"), 2.0, null, alerter);
         Assert.assertEquals(monitor.getName(), "foo");
         Assert.assertEquals(monitor.getEventType(), "event");
 
@@ -155,7 +153,7 @@ public class TestMonitor
     {
 
         InMemoryAlerter alerter = new InMemoryAlerter();
-        Monitor monitor = new Monitor("foo", "event", executor, Predicates.<Event>alwaysTrue(), null, 10.0, alerter);
+        Monitor monitor = new Monitor("foo", "event", executor, new EventPredicate("event", "true"), null, 10.0, alerter);
         Assert.assertEquals(monitor.getName(), "foo");
         Assert.assertEquals(monitor.getEventType(), "event");
 
@@ -209,7 +207,7 @@ public class TestMonitor
             throws Exception
     {
         InMemoryAlerter alerter = new InMemoryAlerter();
-        Monitor monitor = new Monitor("foo", "event", executor, Predicates.<Event>alwaysTrue(), 2.0, 100.0, alerter);
+        Monitor monitor = new Monitor("foo", "event", executor, new EventPredicate("event", "true"), 2.0, 100.0, alerter);
         Assert.assertEquals(monitor.getName(), "foo");
         Assert.assertEquals(monitor.getEventType(), "event");
 

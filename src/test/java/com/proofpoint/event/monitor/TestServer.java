@@ -93,7 +93,7 @@ public class TestServer
             monitors.put(monitor.getName(), monitor);
         }
 
-        Assert.assertEquals(monitors.size(), 5);
+        Assert.assertEquals(monitors.size(), 6);
 
         scorerHttpMonitor = monitors.get("ScorerHttpMonitor");
         Assert.assertNotNull(scorerHttpMonitor);

@@ -15,68 +15,60 @@
  */
 package com.proofpoint.event.monitor;
 
+import com.google.common.base.Predicate;
+import org.mvel2.MVEL;
 
-import org.codehaus.jackson.annotate.JsonCreator;
-import org.codehaus.jackson.annotate.JsonProperty;
-
-public class MonitorJson
+public class EventPredicate implements Predicate<Event>
 {
     private final String eventType;
     private final String eventFilter;
-    private final Double minOneMinuteRate;
-    private final Double maxOneMinuteRate;
+    private final Object expression;
 
-    @JsonCreator
-    public MonitorJson(
-            @JsonProperty("eventType") String eventType,
-            @JsonProperty("eventFilter") String eventFilter,
-            @JsonProperty("minOneMinuteRate") Double minOneMinuteRate,
-            @JsonProperty("maxOneMinuteRate") Double maxOneMinuteRate)
+    public EventPredicate(String eventType, String eventFilter)
     {
         this.eventType = eventType;
         this.eventFilter = eventFilter;
-        this.minOneMinuteRate = minOneMinuteRate;
-        this.maxOneMinuteRate = maxOneMinuteRate;
+        expression = MVEL.compileExpression(eventFilter);
     }
 
-    @JsonProperty
     public String getEventType()
     {
         return eventType;
     }
 
-    @JsonProperty
     public String getEventFilter()
     {
         return eventFilter;
     }
 
-    public EventPredicate getEventPredicate()
+    @Override
+    public boolean apply(Event event)
     {
-        return new EventPredicate(eventType, eventFilter);
-    }
+        if (!event.getType().equals(eventType)) {
+            return false;
+        }
 
-    @JsonProperty
-    public Double getMinOneMinuteRate()
-    {
-        return minOneMinuteRate;
-    }
+        if (eventFilter == null) {
+            return true;
+        }
 
-    @JsonProperty
-    public Double getMaxOneMinuteRate()
-    {
-        return maxOneMinuteRate;
+        try {
+            // NOTE: null is considered false
+            return MVEL.executeExpression(expression, event.getData(), Boolean.class) == Boolean.TRUE;
+        }
+        catch (Exception ignored) {
+            // exceptions will be caused by bad data like missing fields
+            return false;
+        }
     }
 
     @Override
     public String toString()
     {
         final StringBuilder sb = new StringBuilder();
-        sb.append("MonitorJson");
+        sb.append("EventPredicate");
         sb.append("{eventType='").append(eventType).append('\'');
-        sb.append(", filter=").append(eventFilter);
-        sb.append(", minOneMinuteRate=").append(minOneMinuteRate);
-        sb.append(", maxOneMinuteRate=").append(maxOneMinuteRate);
+        sb.append(", eventFilter='").append(eventFilter).append('\'');
         sb.append('}');
         return sb.toString();
     }

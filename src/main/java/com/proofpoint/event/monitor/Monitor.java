@@ -16,7 +16,6 @@
 package com.proofpoint.event.monitor;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import org.weakref.jmx.Managed;
 import org.weakref.jmx.Nested;
@@ -33,7 +32,7 @@ public class Monitor
     private final String name;
     private final String eventType;
     private final ScheduledExecutorService executor;
-    private final Predicate<Event> filter;
+    private final EventPredicate eventPredicate;
     private final Alerter alerter;
     private final CounterStat counterStat;
     private final Double minimumOneMinuteRate;
@@ -41,19 +40,19 @@ public class Monitor
     private final AtomicBoolean failed = new AtomicBoolean();
     private ScheduledFuture<?> scheduledFuture;
 
-    public Monitor(String name, String eventType, ScheduledExecutorService executor, Predicate<Event> filter, Double minimumOneMinuteRate, Double maximumOneMinuteRate, Alerter alerter)
+    public Monitor(String name, String eventType, ScheduledExecutorService executor, EventPredicate eventPredicate, Double minimumOneMinuteRate, Double maximumOneMinuteRate, Alerter alerter)
     {
         Preconditions.checkNotNull(name, "name is null");
         Preconditions.checkNotNull(eventType, "eventType is null");
         Preconditions.checkNotNull(executor, "executor is null");
-        Preconditions.checkNotNull(filter, "filter is null");
+        Preconditions.checkNotNull(eventPredicate, "eventPredicate is null");
         Preconditions.checkArgument(minimumOneMinuteRate != null || maximumOneMinuteRate != null, "A minimum value or maximum value must be provided");
         Preconditions.checkNotNull(alerter, "alerter is null");
 
         this.name = name;
         this.eventType = eventType;
         this.executor = executor;
-        this.filter = filter;
+        this.eventPredicate = eventPredicate;
         this.alerter = alerter;
         counterStat = new CounterStat(executor);
         this.minimumOneMinuteRate = minimumOneMinuteRate;
@@ -111,10 +110,16 @@ public class Monitor
         return failed.get();
     }
 
-    @Managed
+    @Managed(description = "Type of the event being monitor")
     public String getEventType()
     {
         return eventType;
+    }
+
+    @Managed(description = "Filter on the events being monitor")
+    public String getEventFilter()
+    {
+        return eventPredicate.getEventFilter();
     }
 
     @Managed
@@ -170,7 +175,7 @@ public class Monitor
 
     public void processEvents(Iterable<Event> events)
     {
-        int count = Iterables.size(Iterables.filter(events, filter));
+        int count = Iterables.size(Iterables.filter(events, eventPredicate));
         counterStat.update(count);
     }
 }
