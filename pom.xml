@@ -12,7 +12,7 @@
     <parent>
         <groupId>com.proofpoint.platform</groupId>
         <artifactId>rest-server-base</artifactId>
-        <version>0.54</version>
+        <version>0.57</version>
     </parent>
 
     <licenses>
@@ -132,12 +132,6 @@
         <dependency>
             <groupId>org.codehaus.jackson</groupId>
             <artifactId>jackson-core-asl</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.proofpoint.platform</groupId>
-            <artifactId>experimental</artifactId>
-            <version>0.54</version>
         </dependency>
 
         <dependency>
