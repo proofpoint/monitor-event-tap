@@ -54,8 +54,8 @@ public class TestMonitorEventTapResource
     public void testPostEvents()
     {
         InMemoryAlerter alerter = new InMemoryAlerter();
-        Monitor fooMonitor = new Monitor("foo", "event", executor, Predicates.<Event>alwaysTrue(), 1, alerter);
-        Monitor barMonitor = new Monitor("bar", "event", executor, Predicates.<Event>alwaysTrue(), 1, alerter);
+        Monitor fooMonitor = new Monitor("foo", "event", executor, Predicates.<Event>alwaysTrue(), 1.0, 2.0, alerter);
+        Monitor barMonitor = new Monitor("bar", "event", executor, Predicates.<Event>alwaysTrue(), 1.0, 2.0, alerter);
         MonitorEventTapResource resource = new MonitorEventTapResource(ImmutableSet.of(fooMonitor, barMonitor));
         resource.post(Collections.nCopies(100, new Event("event", "id", "host", new DateTime(), ImmutableMap.<String, Object>of())));
 

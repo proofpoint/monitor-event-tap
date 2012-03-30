@@ -49,7 +49,7 @@ public class AmazonEmailAlerter implements Alerter
     public void failed(String name, String description)
     {
         try {
-            sendMessage("Failed: " + name, description);
+            sendMessage("Failed: " + name, "Failed " + name + ": " + description);
         }
         catch (Exception e) {
             log.error(e, "Failed to send failed alert");
@@ -60,7 +60,7 @@ public class AmazonEmailAlerter implements Alerter
     public void recovered(String name, String description)
     {
         try {
-            sendMessage("Recovered: " + name, description);
+            sendMessage("Recovered: " + name, "RECOVERED " + name + ": " + description);
         }
         catch (Exception e) {
             log.error(e, "Failed to send recovered alert");

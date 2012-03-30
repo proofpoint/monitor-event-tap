@@ -33,13 +33,15 @@ public class MonitorJson
 {
     private final String eventType;
     private final FilterJson filter;
-    private final double minOneMinuteRate;
+    private final Double minOneMinuteRate;
+    private final Double maxOneMinuteRate;
 
     @JsonCreator
     public MonitorJson(
             @JsonProperty("eventType") String eventType,
             @JsonProperty("filter") FilterJson filter,
-            @JsonProperty("minOneMinuteRate") double minOneMinuteRate)
+            @JsonProperty("minOneMinuteRate") Double minOneMinuteRate,
+            @JsonProperty("maxOneMinuteRate") Double maxOneMinuteRate)
     {
         this.eventType = eventType;
         if (filter != null) {
@@ -49,6 +51,7 @@ public class MonitorJson
             this.filter = new FilterJson(ImmutableMap.<String, String>of());
         }
         this.minOneMinuteRate = minOneMinuteRate;
+        this.maxOneMinuteRate = maxOneMinuteRate;
     }
 
     @JsonProperty
@@ -69,9 +72,15 @@ public class MonitorJson
     }
 
     @JsonProperty
-    public double getMinOneMinuteRate()
+    public Double getMinOneMinuteRate()
     {
         return minOneMinuteRate;
+    }
+
+    @JsonProperty
+    public Double getMaxOneMinuteRate()
+    {
+        return maxOneMinuteRate;
     }
 
     @Override
@@ -82,6 +91,7 @@ public class MonitorJson
         sb.append("{eventType='").append(eventType).append('\'');
         sb.append(", filter=").append(filter);
         sb.append(", minOneMinuteRate=").append(minOneMinuteRate);
+        sb.append(", maxOneMinuteRate=").append(maxOneMinuteRate);
         sb.append('}');
         return sb.toString();
     }

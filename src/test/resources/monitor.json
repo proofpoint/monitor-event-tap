@@ -3,7 +3,8 @@
         "eventType" : "HttpRequest",
         "filter" : {
             "startsWith" :{
-                "requestUri" : "/v1/scorer"
+                "requestUri" : "/v1/scorer",
+                "responseCode" : "2"
             }
         },
         "minOneMinuteRate" : 100
@@ -11,5 +12,18 @@
     "PrsMessageMonitor" : {
         "eventType" : "PrsMessage",
         "minOneMinuteRate" : 100
+    },
+    "Min" : {
+        "eventType" : "MinEvent",
+        "minOneMinuteRate" : 11
+    },
+    "Max" : {
+        "eventType" : "MaxEvent",
+        "maxOneMinuteRate" : 33
+    },
+    "Between" : {
+        "eventType" : "BetweenEvent",
+        "minOneMinuteRate" : 111,
+        "maxOneMinuteRate" : 333
     }
 }

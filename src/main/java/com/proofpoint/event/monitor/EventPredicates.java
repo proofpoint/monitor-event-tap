@@ -60,11 +60,11 @@ public class EventPredicates
         public boolean apply(Event event)
         {
             Object value = event.getData().get(field);
-            if (value instanceof String) {
-                String stringValue = (String) value;
-                return stringValue.startsWith(prefix);
+            if (value == null) {
+                return false;
             }
-            return false;
+            String stringValue = String.valueOf(value);
+            return stringValue.startsWith(prefix);
         }
 
         @Override

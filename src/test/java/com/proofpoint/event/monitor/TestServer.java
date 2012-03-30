@@ -45,10 +45,12 @@ import org.testng.annotations.Test;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response.Status;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Maps.newHashMap;
 import static java.util.Collections.nCopies;
 import static org.testng.Assert.assertEquals;
 
@@ -86,17 +88,18 @@ public class TestServer
 
         server = injector.getInstance(TestingHttpServer.class);
 
-        List<Monitor> monitors = newArrayList(injector.getInstance(Key.get(new TypeLiteral<Set<Monitor>>() { })));
-        Assert.assertEquals(monitors.size(), 2);
+        Map<String, Monitor> monitors = newHashMap();
+        for (Monitor monitor : newArrayList(injector.getInstance(Key.get(new TypeLiteral<Set<Monitor>>() { })))) {
+            monitors.put(monitor.getName(), monitor);
+        }
 
-        if (monitors.get(0).getName().equals("ScorerHttpMonitor")) {
-            scorerHttpMonitor = monitors.get(0);
-            prsMessageMonitor = monitors.get(1);
-        }
-        else {
-            scorerHttpMonitor = monitors.get(1);
-            prsMessageMonitor = monitors.get(0);
-        }
+        Assert.assertEquals(monitors.size(), 5);
+
+        scorerHttpMonitor = monitors.get("ScorerHttpMonitor");
+        Assert.assertNotNull(scorerHttpMonitor);
+
+        prsMessageMonitor = monitors.get("PrsMessageMonitor");
+        Assert.assertNotNull(prsMessageMonitor);
 
         server.start();
         client = new AsyncHttpClient();
@@ -120,11 +123,12 @@ public class TestServer
             throws Exception
     {
         List<Event> events = newArrayList(concat(
-                nCopies(3, new Event("HttpRequest", "id", "host", new DateTime(), ImmutableMap.of("requestUri", "/v1/scorer/foo"))),
+                nCopies(3, new Event("HttpRequest", "id", "host", new DateTime(), ImmutableMap.of("requestUri", "/v1/scorer/foo", "responseCode", 204))),
                 nCopies(5, new Event("not-HttpRequest", "id", "host", new DateTime(), ImmutableMap.<String, Object>of())),
                 nCopies(7, new Event("HttpRequest", "id", "host", new DateTime(), ImmutableMap.of("requestUri", "/other/path"))),
                 nCopies(11, new Event("PrsMessage", "id", "host", new DateTime(), ImmutableMap.<String, Object>of())),
-                nCopies(13, new Event("not-PrsMessage", "id", "host", new DateTime(), ImmutableMap.<String, Object>of()))
+                nCopies(13, new Event("not-PrsMessage", "id", "host", new DateTime(), ImmutableMap.<String, Object>of())),
+                nCopies(17, new Event("HttpRequest", "id", "host", new DateTime(), ImmutableMap.of("requestUri", "/v1/scorer/foo", "responseCode", 400)))
         ));
         String json = JsonCodec.listJsonCodec(Event.class).toJson(events);
 

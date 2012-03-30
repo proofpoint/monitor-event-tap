@@ -45,7 +45,12 @@ public class MonitorLoader
         for (Entry<String, MonitorJson> entry : monitorJsonMap.entrySet()) {
             String name = entry.getKey();
             MonitorJson monitorJson = entry.getValue();
-            Monitor monitor = new Monitor(name, monitorJson.getEventType(), executor, monitorJson.getEventPredicate(), monitorJson.getMinOneMinuteRate(), alerter);
+            Monitor monitor = new Monitor(name, monitorJson.getEventType(),
+                    executor,
+                    monitorJson.getEventPredicate(),
+                    monitorJson.getMinOneMinuteRate(),
+                    monitorJson.getMaxOneMinuteRate(),
+                    alerter);
             monitors.add(monitor);
         }
         return monitors.build();

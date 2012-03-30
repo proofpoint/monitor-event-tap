@@ -15,6 +15,7 @@
  */
 package com.proofpoint.event.monitor;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import org.weakref.jmx.Managed;
@@ -35,19 +36,28 @@ public class Monitor
     private final Predicate<Event> filter;
     private final Alerter alerter;
     private final CounterStat counterStat;
-    private final double minOneMinuteRate;
+    private final Double minimumOneMinuteRate;
+    private final Double maximumOneMinuteRate;
     private final AtomicBoolean failed = new AtomicBoolean();
     private ScheduledFuture<?> scheduledFuture;
 
-    public Monitor(String name, String eventType, ScheduledExecutorService executor, Predicate<Event> filter, double minOneMinuteRate, Alerter alerter)
+    public Monitor(String name, String eventType, ScheduledExecutorService executor, Predicate<Event> filter, Double minimumOneMinuteRate, Double maximumOneMinuteRate, Alerter alerter)
     {
+        Preconditions.checkNotNull(name, "name is null");
+        Preconditions.checkNotNull(eventType, "eventType is null");
+        Preconditions.checkNotNull(executor, "executor is null");
+        Preconditions.checkNotNull(filter, "filter is null");
+        Preconditions.checkArgument(minimumOneMinuteRate != null || maximumOneMinuteRate != null, "A minimum value or maximum value must be provided");
+        Preconditions.checkNotNull(alerter, "alerter is null");
+
         this.name = name;
         this.eventType = eventType;
         this.executor = executor;
         this.filter = filter;
         this.alerter = alerter;
         counterStat = new CounterStat(executor);
-        this.minOneMinuteRate = minOneMinuteRate;
+        this.minimumOneMinuteRate = minimumOneMinuteRate;
+        this.maximumOneMinuteRate = maximumOneMinuteRate;
     }
 
     @PostConstruct
@@ -83,6 +93,24 @@ public class Monitor
         return name;
     }
 
+    @Managed(description = "Minimum value for the one minute rate")
+    public Double getMinimumOneMinuteRate()
+    {
+        return minimumOneMinuteRate;
+    }
+
+    @Managed(description = "Maximum value for the one minute rate")
+    public Double getMaximumOneMinuteRate()
+    {
+        return maximumOneMinuteRate;
+    }
+
+    @Managed(description = "Is this monitor in the failed state?")
+    public boolean isFailed()
+    {
+        return failed.get();
+    }
+
     @Managed
     public String getEventType()
     {
@@ -100,17 +128,43 @@ public class Monitor
     public void checkState()
     {
         double oneMinuteRate = counterStat.getOneMinuteRate();
-        if (oneMinuteRate < minOneMinuteRate) {
-            if (failed.compareAndSet(false, true)) {
-                // fire error message
-                alerter.failed(name, String.format("FAILED: Expected oneMinuteRate to be greater than %s, but was %s", minOneMinuteRate, oneMinuteRate));
+        if (minimumOneMinuteRate != null && maximumOneMinuteRate != null) {
+            if (minimumOneMinuteRate <= oneMinuteRate && oneMinuteRate <= maximumOneMinuteRate) {
+                recovered(String.format("The oneMinuteRate is now between %s and %s", minimumOneMinuteRate, maximumOneMinuteRate));
+            }
+            else {
+                failed(String.format("Expected oneMinuteRate to be between %s and %s, but is %s", minimumOneMinuteRate, maximumOneMinuteRate, oneMinuteRate));
+            }
+        } else if (minimumOneMinuteRate != null) {
+            if (minimumOneMinuteRate <= oneMinuteRate) {
+                recovered(String.format("The oneMinuteRate is now greater than %s", minimumOneMinuteRate));
+            }
+            else {
+                failed(String.format("Expected oneMinuteRate to be greater than %s, but is %s", minimumOneMinuteRate, oneMinuteRate));
+            }
+        } else if (maximumOneMinuteRate != null) {
+            if (oneMinuteRate <= maximumOneMinuteRate) {
+                recovered(String.format("The oneMinuteRate is now less than %s", maximumOneMinuteRate));
+            }
+            else {
+                failed(String.format("Expected oneMinuteRate to be less than %s, but is %s", maximumOneMinuteRate, oneMinuteRate));
             }
         }
-        else {
-            if (failed.compareAndSet(true, false)) {
-                // fire recovery message
-                alerter.recovered(name, String.format("RECOVERED: The oneMinuteRate is now greater than %s", minOneMinuteRate));
-            }
+    }
+
+    private void failed(String description)
+    {
+        if (failed.compareAndSet(false, true)) {
+            // fire error message
+            alerter.failed(name, description);
+        }
+    }
+
+    private void recovered(String description)
+    {
+        if (failed.compareAndSet(true, false)) {
+            // fire recovery message
+            alerter.recovered(name, description);
         }
     }
 
