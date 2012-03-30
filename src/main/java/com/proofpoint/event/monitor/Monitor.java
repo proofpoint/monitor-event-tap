@@ -110,13 +110,13 @@ public class Monitor
         return failed.get();
     }
 
-    @Managed(description = "Type of the event being monitor")
+    @Managed(description = "Type of the event being monitored")
     public String getEventType()
     {
         return eventType;
     }
 
-    @Managed(description = "Filter on the events being monitor")
+    @Managed(description = "Filter on the events being monitored")
     public String getEventFilter()
     {
         return eventPredicate.getEventFilter();
