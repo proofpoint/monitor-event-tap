@@ -161,7 +161,7 @@ public class Monitor
     {
         if (failed.compareAndSet(false, true)) {
             // fire error message
-            alerter.failed(name, description);
+            alerter.failed(this, description);
         }
     }
 
@@ -169,7 +169,7 @@ public class Monitor
     {
         if (failed.compareAndSet(true, false)) {
             // fire recovery message
-            alerter.recovered(name, description);
+            alerter.recovered(this, description);
         }
     }
 

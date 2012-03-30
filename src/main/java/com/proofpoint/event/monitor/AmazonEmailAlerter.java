@@ -46,10 +46,15 @@ public class AmazonEmailAlerter implements Alerter
     }
 
     @Override
-    public void failed(String name, String description)
+    public void failed(Monitor monitor, String description)
     {
         try {
-            sendMessage("Failed: " + name, "Failed " + name + ": " + description);
+            sendMessage("Failed: " + monitor.getName(),
+                    "Failed " + monitor.getName() + ": " + description + "\n" +
+                            "\n" +
+                            "Event: " + monitor.getEventType() + "\n" +
+                            "Filter: " + monitor.getEventFilter() + "\n"
+            );
         }
         catch (Exception e) {
             log.error(e, "Failed to send failed alert");
@@ -57,10 +62,15 @@ public class AmazonEmailAlerter implements Alerter
     }
 
     @Override
-    public void recovered(String name, String description)
+    public void recovered(Monitor monitor, String description)
     {
         try {
-            sendMessage("Recovered: " + name, "RECOVERED " + name + ": " + description);
+            sendMessage("Recovered: " + monitor.getName(),
+                    "RECOVERED " + monitor.getName() + ": " + description + "\n" +
+                            "\n" +
+                            "Event: " + monitor.getEventType() + "\n" +
+                            "Filter: " + monitor.getEventFilter() + "\n"
+            );
         }
         catch (Exception e) {
             log.error(e, "Failed to send recovered alert");

@@ -29,15 +29,15 @@ public class InMemoryAlerter implements Alerter
     }
 
     @Override
-    public void failed(String name, String description)
+    public void failed(Monitor monitor, String description)
     {
-        alerts.add(new InMemoryAlert(name, true, description));
+        alerts.add(new InMemoryAlert(monitor.getName(), true, description));
     }
 
     @Override
-    public void recovered(String name, String description)
+    public void recovered(Monitor monitor, String description)
     {
-        alerts.add(new InMemoryAlert(name, false, description));
+        alerts.add(new InMemoryAlert(monitor.getName(), false, description));
     }
 
     public static class InMemoryAlert
