@@ -119,35 +119,35 @@ public class MonitorsProvider implements Provider<Set<Monitor>>
             catch (IOException e) {
                 throw Throwables.propagate(e);
             }
-        }
 
-        for (Monitor monitor : monitors) {
-            monitor.start();
-        }
-
-        Set<String> eventTypes = newHashSet();
-        for (Monitor monitor : monitors) {
-            eventTypes.add(monitor.getEventType());
-        }
-
-        if (announcer != null) {
-            for (String eventType : eventTypes) {
-                ServiceAnnouncement announcement = ServiceAnnouncement.serviceAnnouncement("eventTap")
-                        .addProperty("http", httpServerInfo.getHttpUri().toString() + "/v1/event")
-                        .addProperty("tapId", flowId)
-                        .addProperty("flowId", flowId)
-                        .addProperty("eventType", eventType)
-                        .build();
-                announcer.addServiceAnnouncement(announcement);
-                announcements.add(announcement);
-            }
-        }
-
-        if (exporter != null) {
             for (Monitor monitor : monitors) {
-                String name = generatedNameOf(Monitor.class, named(monitor.getName()));
-                exporter.export(name, monitor);
-                mbeanNames.add(name);
+                monitor.start();
+            }
+
+            Set<String> eventTypes = newHashSet();
+            for (Monitor monitor : monitors) {
+                eventTypes.add(monitor.getEventType());
+            }
+
+            if (announcer != null) {
+                for (String eventType : eventTypes) {
+                    ServiceAnnouncement announcement = ServiceAnnouncement.serviceAnnouncement("eventTap")
+                            .addProperty("http", httpServerInfo.getHttpUri().toString() + "/v1/event")
+                            .addProperty("tapId", flowId)
+                            .addProperty("flowId", flowId)
+                            .addProperty("eventType", eventType)
+                            .build();
+                    announcer.addServiceAnnouncement(announcement);
+                    announcements.add(announcement);
+                }
+            }
+
+            if (exporter != null) {
+                for (Monitor monitor : monitors) {
+                    String name = generatedNameOf(Monitor.class, named(monitor.getName()));
+                    exporter.export(name, monitor);
+                    mbeanNames.add(name);
+                }
             }
         }
 
