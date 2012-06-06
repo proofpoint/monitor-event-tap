@@ -39,6 +39,7 @@ public class MainModule
         binder.disableCircularProxies();
 
         binder.bind(MonitorEventTapResource.class).in(Scopes.SINGLETON);
+        binder.bind(MonitorsResource.class).in(Scopes.SINGLETON);
         binder.bind(MonitorLoader.class).in(Scopes.SINGLETON);
         binder.bind(new TypeLiteral<Set<Monitor>>() {}).toProvider(MonitorsProvider.class).in(Scopes.SINGLETON);
 
