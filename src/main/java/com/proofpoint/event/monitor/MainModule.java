@@ -21,6 +21,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
+import com.proofpoint.discovery.client.DiscoveryBinder;
 
 import javax.inject.Singleton;
 import java.util.Set;
@@ -45,6 +46,8 @@ public class MainModule
 
         bindConfig(binder).to(MonitorConfig.class);
         jsonCodecBinder(binder).bindMapJsonCodec(String.class, MonitorJson.class);
+
+        DiscoveryBinder.discoveryBinder(binder).bindHttpAnnouncement("monitor-event-tap");
     }
 
     @Provides
