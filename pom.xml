@@ -12,7 +12,7 @@
     <parent>
         <groupId>com.proofpoint.platform</groupId>
         <artifactId>rest-server-base</artifactId>
-        <version>0.57</version>
+        <version>0.64</version>
     </parent>
 
     <licenses>
@@ -71,11 +71,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-validator</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
         </dependency>
@@ -93,6 +88,11 @@
         <dependency>
             <groupId>com.proofpoint.platform</groupId>
             <artifactId>discovery-experimental</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.proofpoint.platform</groupId>
+            <artifactId>jmx-http-experimental</artifactId>
         </dependency>
 
         <dependency>
@@ -141,8 +141,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.ning</groupId>
-            <artifactId>async-http-client</artifactId>
+            <groupId>com.proofpoint.platform</groupId>
+            <artifactId>http-client-experimental</artifactId>
             <scope>test</scope>
         </dependency>
 

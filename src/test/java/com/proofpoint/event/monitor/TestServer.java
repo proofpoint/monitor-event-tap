@@ -15,10 +15,12 @@
  */
 package com.proofpoint.event.monitor;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -27,15 +29,18 @@ import com.google.inject.Module;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.util.Modules;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Response;
 import com.proofpoint.configuration.ConfigurationFactory;
 import com.proofpoint.configuration.ConfigurationModule;
 import com.proofpoint.discovery.client.DiscoveryModule;
-import com.proofpoint.experimental.jmx.JmxHttpModule;
+import com.proofpoint.http.client.ApacheHttpClient;
+import com.proofpoint.http.client.AsyncHttpClient;
+import com.proofpoint.http.client.FullJsonResponseHandler.JsonResponse;
+import com.proofpoint.http.client.HttpClientConfig;
+import com.proofpoint.http.client.Request;
 import com.proofpoint.http.server.testing.TestingHttpServer;
 import com.proofpoint.http.server.testing.TestingHttpServerModule;
 import com.proofpoint.jaxrs.JaxrsModule;
+import com.proofpoint.jmx.JmxHttpModule;
 import com.proofpoint.jmx.JmxModule;
 import com.proofpoint.json.JsonCodec;
 import com.proofpoint.json.JsonModule;
@@ -50,13 +55,20 @@ import javax.annotation.Nullable;
 import javax.management.MBeanServer;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response.Status;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
 
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Maps.newHashMap;
+import static com.proofpoint.http.client.FullJsonResponseHandler.createFullJsonResponseHandler;
+import static com.proofpoint.http.client.Request.Builder.prepareGet;
+import static com.proofpoint.http.client.Request.Builder.preparePost;
+import static com.proofpoint.http.client.StaticBodyGenerator.createStaticBodyGenerator;
+import static com.proofpoint.http.client.StatusResponseHandler.createStatusResponseHandler;
 import static com.proofpoint.testing.Assertions.assertEqualsIgnoreOrder;
 import static java.util.Collections.nCopies;
 import static org.mockito.Mockito.mock;
@@ -123,7 +135,8 @@ public class TestServer
         Assert.assertNotNull(prsMessageMonitor);
 
         server.start();
-        client = new AsyncHttpClient();
+        client = new AsyncHttpClient(new ApacheHttpClient(new HttpClientConfig()),
+                Executors.newCachedThreadPool(new ThreadFactoryBuilder().setDaemon(true).build()));
     }
 
     @AfterMethod
@@ -132,10 +145,6 @@ public class TestServer
     {
         if (server != null) {
             server.stop();
-        }
-
-        if (client != null) {
-            client.close();
         }
     }
 
@@ -151,15 +160,16 @@ public class TestServer
                 nCopies(13, new Event("not-PrsMessage", "id", "host", new DateTime(), ImmutableMap.<String, Object>of())),
                 nCopies(17, new Event("HttpRequest", "id", "host", new DateTime(), ImmutableMap.of("requestUri", "/v1/scorer/foo", "responseCode", 400)))
         ));
-        String json = JsonCodec.listJsonCodec(Event.class).toJson(events);
+        final String json = JsonCodec.listJsonCodec(Event.class).toJson(events);
 
-        Response response = client.preparePost(urlFor("/v1/event"))
+        Request request = preparePost()
+                .setUri(urlFor("/v1/event"))
                 .setHeader("Content-Type", MediaType.APPLICATION_JSON)
-                .setBody(json)
-                .execute()
-                .get();
+                .setBodyGenerator(createStaticBodyGenerator(json, Charsets.UTF_8))
+                .build();
+        int statusCode = client.execute(request, createStatusResponseHandler()).checkedGet().getStatusCode();
 
-        assertEquals(response.getStatusCode(), Status.NO_CONTENT.getStatusCode());
+        assertEquals(statusCode, Status.NO_CONTENT.getStatusCode());
         Assert.assertEquals(scorerHttpMonitor.getEvents().getCount(), 3);
         Assert.assertEquals(prsMessageMonitor.getEvents().getCount(), 11);
     }
@@ -168,9 +178,13 @@ public class TestServer
     public void testListMonitors()
             throws Exception
     {
-        Response response = client.prepareGet(urlFor("/v1/monitor")).execute().get();
+        Request request = prepareGet()
+                .setUri(urlFor("/v1/monitor"))
+                .build();
+        JsonResponse<List<Map<String, Object>>> response = client.execute(request, createFullJsonResponseHandler(MONITOR_LIST_CODEC)).checkedGet();
+
         assertEquals(response.getStatusCode(), Status.OK.getStatusCode());
-        List<Map<String,Object>> actual = MONITOR_LIST_CODEC.fromJson(response.getResponseBody());
+        List<Map<String,Object>> actual = response.getValue();
         Iterable<String> entryNames = Iterables.transform(actual, new Function<Map<String, Object>, String>()
         {
             @Override
@@ -193,9 +207,13 @@ public class TestServer
     public void testGetMonitorDetail()
             throws Exception
     {
-        Response response = client.prepareGet(urlFor("/v1/monitor/ScorerHttpMonitor")).execute().get();
+        Request request = prepareGet()
+                .setUri(urlFor("/v1/monitor/ScorerHttpMonitor"))
+                .build();
+        JsonResponse<Map<String, Object>> response = client.execute(request, createFullJsonResponseHandler(MONITOR_CODEC)).checkedGet();
+
         assertEquals(response.getStatusCode(), Status.OK.getStatusCode());
-        Map<String, Object> actual = MONITOR_CODEC.fromJson(response.getResponseBody());
+        Map<String, Object> actual = response.getValue();
 
         assertEquals(actual, ImmutableMap.<String, Object>builder()
                 .put("name", "ScorerHttpMonitor")
@@ -204,7 +222,7 @@ public class TestServer
                 .put("oneMinuteRate", 0.0)
                 .put("fiveMinuteRate", 0.0)
                 .put("fifteenMinuteRate", 0.0)
-                .put("self", urlFor("/v1/monitor/ScorerHttpMonitor"))
+                .put("self", urlFor("/v1/monitor/ScorerHttpMonitor").toString())
                 .build());
     }
 
@@ -212,18 +230,26 @@ public class TestServer
     public void testGetMonitorState()
             throws Exception
     {
-        Response response = client.prepareGet(urlFor("/v1/monitor/ScorerHttpMonitor")).execute().get();
-        assertEquals(response.getStatusCode(), Status.OK.getStatusCode());
-        Map<String, Object> before = MONITOR_CODEC.fromJson(response.getResponseBody());
+        Request request = prepareGet()
+                .setUri(urlFor("/v1/monitor/ScorerHttpMonitor"))
+                .build();
+        JsonResponse<Map<String, Object>> response = client.execute(request, createFullJsonResponseHandler(MONITOR_CODEC)).checkedGet();
 
+        assertEquals(response.getStatusCode(), Status.OK.getStatusCode());
+
+        Map<String, Object> before = response.getValue();
         assertEquals(before.get("ok"), true);
 
         failHttpScorerMonitor();
 
-        response = client.prepareGet(urlFor("/v1/monitor/ScorerHttpMonitor")).execute().get();
-        assertEquals(response.getStatusCode(), Status.OK.getStatusCode());
-        Map<String, Object> after = MONITOR_CODEC.fromJson(response.getResponseBody());
+        request = prepareGet()
+                .setUri(urlFor("/v1/monitor/ScorerHttpMonitor"))
+                .build();
+        response = client.execute(request, createFullJsonResponseHandler(MONITOR_CODEC)).checkedGet();
 
+        assertEquals(response.getStatusCode(), Status.OK.getStatusCode());
+
+        Map<String, Object> after = response.getValue();
         assertEquals(after.get("ok"), false);
     }
 
@@ -236,8 +262,8 @@ public class TestServer
         scorerHttpMonitor.checkState();
     }
 
-    private String urlFor(String path)
+    private URI urlFor(String path)
     {
-        return server.getBaseUrl().resolve(path).toString();
+        return server.getBaseUrl().resolve(path);
     }
 }
