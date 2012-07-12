@@ -17,9 +17,11 @@ package com.proofpoint.event.monitor;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.proofpoint.node.NodeInfo;
+import org.logicalshift.concurrent.SerialScheduledExecutorService;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Parameters;
@@ -29,6 +31,9 @@ import java.io.FileInputStream;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class TestCloudWatchUpdater
 {
@@ -79,4 +84,19 @@ public class TestCloudWatchUpdater
         }
     }
 
+    @Test
+    public void testSkipsIfDisabled()
+    {
+        AmazonCloudWatch mockCloudWatch = mock(AmazonCloudWatch.class);
+
+        cloudWatchUpdater =
+                new CloudWatchUpdater(
+                        new AmazonConfig().setAlertingEnabled(false),
+                        mockCloudWatch,
+                        new SerialScheduledExecutorService(),
+                        new NodeInfo("test"));
+
+        cloudWatchUpdater.updateCloudWatch();
+        verifyZeroInteractions(mockCloudWatch);
+    }
 }

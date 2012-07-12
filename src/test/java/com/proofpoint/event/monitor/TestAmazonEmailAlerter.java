@@ -26,6 +26,9 @@ import org.testng.annotations.Test;
 import java.io.FileInputStream;
 import java.util.Properties;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyZeroInteractions;
+
 public class TestAmazonEmailAlerter
 {
     private AmazonEmailAlerter alerter;
@@ -53,5 +56,18 @@ public class TestAmazonEmailAlerter
     public void testSendMessage()
     {
         alerter.sendMessage("test subject", "test body");
+    }
+
+    @Test
+    public void testSkipsIfDisabled()
+    {
+        AmazonSimpleEmailService mockEmailService = mock(AmazonSimpleEmailService.class);
+
+        alerter = new AmazonEmailAlerter(
+                        new AmazonConfig().setAlertingEnabled(false),
+                        mockEmailService);
+
+        alerter.sendMessage("test", "should not be sent");
+        verifyZeroInteractions(mockEmailService);
     }
 }

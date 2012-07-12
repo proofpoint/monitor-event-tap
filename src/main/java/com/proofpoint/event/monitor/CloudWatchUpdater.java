@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 public class CloudWatchUpdater
 {
     private static final Logger log = Logger.get(CloudWatchUpdater.class);
+    private final boolean enabled;
     private final Duration updateTime;
     private final AmazonCloudWatch cloudWatch;
     private final ScheduledExecutorService executorService;
@@ -49,6 +50,7 @@ public class CloudWatchUpdater
         Preconditions.checkNotNull(executorService, "executorService is null");
         Preconditions.checkNotNull(nodeInfo, "nodeInfo is null");
 
+        this.enabled = config.isAlertingEnabled();
         this.updateTime = config.getCloudWatchUpdateTime();
         this.cloudWatch = cloudWatch;
         this.executorService = executorService;
@@ -86,6 +88,11 @@ public class CloudWatchUpdater
 
     public void updateCloudWatch()
     {
+        if (!enabled) {
+            log.info("Skipping CloudWatch update (disabled by configuration)");
+            return;
+        }
+
         MetricDatum datum = new MetricDatum()
                 .withMetricName("Heartbeat")
                 .withUnit(StandardUnit.None.toString())

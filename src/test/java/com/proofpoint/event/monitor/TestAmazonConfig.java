@@ -34,6 +34,7 @@ public class TestAmazonConfig
                 .setAwsSecretKey(null)
                 .setFromAddress(null)
                 .setToAddress(null)
+                .setAlertingEnabled(true)
         );
     }
 
@@ -46,6 +47,7 @@ public class TestAmazonConfig
                 .put("alerter.to", "to")
                 .put("alerter.aws-access-key", "access")
                 .put("alerter.aws-secret-key", "secret")
+                .put("alerter.enabled", "false")
                 .build();
 
         AmazonConfig expected = new AmazonConfig()
@@ -53,7 +55,8 @@ public class TestAmazonConfig
                 .setAwsAccessKey("access")
                 .setAwsSecretKey("secret")
                 .setFromAddress("from")
-                .setToAddress("to");
+                .setToAddress("to")
+                .setAlertingEnabled(false);
 
         ConfigAssertions.assertFullMapping(properties, expected);
     }
