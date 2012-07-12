@@ -27,12 +27,15 @@ import org.weakref.jmx.Managed;
 
 import javax.inject.Inject;
 
+import static java.lang.String.format;
+
 public class AmazonEmailAlerter implements Alerter
 {
     private static final Logger log = Logger.get(AmazonEmailAlerter.class);
     private final String fromAddress;
     private final String toAddress;
     private final AmazonSimpleEmailService emailService;
+    private final boolean enabled;
 
     @Inject
     public AmazonEmailAlerter(AmazonConfig config, AmazonSimpleEmailService emailService)
@@ -40,6 +43,7 @@ public class AmazonEmailAlerter implements Alerter
         Preconditions.checkNotNull(config, "config is null");
         Preconditions.checkNotNull(emailService, "emailService is null");
 
+        this.enabled = config.isAlertingEnabled();
         fromAddress = config.getFromAddress();
         toAddress = config.getToAddress();
         this.emailService = emailService;
@@ -80,6 +84,11 @@ public class AmazonEmailAlerter implements Alerter
     @Managed
     public void sendMessage(String subject, String body)
     {
+        if (!enabled) {
+            log.info(format("Skipping alert email '%s' (disabled by configuration)", subject));
+            return;
+        }
+
         SendEmailRequest request = new SendEmailRequest()
                 .withSource(fromAddress)
                 .withDestination(new Destination().withToAddresses(toAddress))

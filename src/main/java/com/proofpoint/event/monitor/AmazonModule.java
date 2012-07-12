@@ -62,6 +62,10 @@ public class AmazonModule
     @Singleton
     private AWSCredentials provideProviderCredentials(AmazonConfig config)
     {
+        if (!config.isAlertingEnabled()) {
+            return new BasicAWSCredentials("", "");
+        }
+
         return new BasicAWSCredentials(config.getAwsAccessKey(), config.getAwsSecretKey());
     }
 }

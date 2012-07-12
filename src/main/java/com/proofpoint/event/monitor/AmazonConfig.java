@@ -18,18 +18,18 @@ package com.proofpoint.event.monitor;
 import com.proofpoint.configuration.Config;
 import com.proofpoint.units.Duration;
 
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.AssertTrue;
 import java.util.concurrent.TimeUnit;
 
 public class AmazonConfig
 {
+    private boolean alertingEnabled = true;
     private Duration cloudWatchUpdateTime = new Duration(10, TimeUnit.SECONDS);
     private String fromAddress;
     private String toAddress;
     private String awsAccessKey;
     private String awsSecretKey;
 
-    @NotNull
     public Duration getCloudWatchUpdateTime()
     {
         return cloudWatchUpdateTime;
@@ -42,7 +42,6 @@ public class AmazonConfig
         return this;
     }
 
-    @NotNull
     public String getFromAddress()
     {
         return fromAddress;
@@ -55,7 +54,6 @@ public class AmazonConfig
         return this;
     }
 
-    @NotNull
     public String getToAddress()
     {
         return toAddress;
@@ -68,7 +66,6 @@ public class AmazonConfig
         return this;
     }
 
-    @NotNull
     public String getAwsAccessKey()
     {
         return awsAccessKey;
@@ -81,7 +78,6 @@ public class AmazonConfig
         return this;
     }
 
-    @NotNull
     public String getAwsSecretKey()
     {
         return awsSecretKey;
@@ -92,5 +88,23 @@ public class AmazonConfig
     {
         this.awsSecretKey = awsSecretKey;
         return this;
+    }
+
+    public boolean isAlertingEnabled()
+    {
+        return alertingEnabled;
+    }
+
+    @Config("alerter.enabled")
+    public AmazonConfig setAlertingEnabled(boolean alertingEnabled)
+    {
+        this.alertingEnabled = alertingEnabled;
+        return this;
+    }
+
+    @AssertTrue(message = "If AWS alerting is enabled, to- and from- addresses, access and secret keys are all required")
+    public boolean isValid()
+    {
+        return !alertingEnabled || (fromAddress != null && toAddress != null && awsAccessKey != null && awsSecretKey != null);
     }
 }
