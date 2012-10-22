@@ -65,6 +65,7 @@ import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.proofpoint.http.client.FullJsonResponseHandler.createFullJsonResponseHandler;
+import static com.proofpoint.http.client.Request.Builder.prepareDelete;
 import static com.proofpoint.http.client.Request.Builder.prepareGet;
 import static com.proofpoint.http.client.Request.Builder.preparePost;
 import static com.proofpoint.http.client.StaticBodyGenerator.createStaticBodyGenerator;
@@ -76,6 +77,7 @@ import static org.testng.Assert.assertEquals;
 
 public class TestServer
 {
+    private static final JsonCodec<Map<String, Integer>> STATS_CODEC = JsonCodec.mapJsonCodec(String.class, Integer.class);
     private static final JsonCodec<Map<String, Object>> MONITOR_CODEC = JsonCodec.mapJsonCodec(String.class, Object.class);
     private static final JsonCodec<List<Map<String, Object>>> MONITOR_LIST_CODEC = JsonCodec.listJsonCodec(JsonCodec.mapJsonCodec(String.class, Object.class));
 
@@ -251,6 +253,45 @@ public class TestServer
 
         Map<String, Object> after = response.getValue();
         assertEquals(after.get("ok"), false);
+    }
+
+    @Test
+    public void testStats()
+            throws Exception
+    {
+        List<Event> events = nCopies(3, new Event("HttpRequest", "id", "host", new DateTime(), ImmutableMap.of("requestUri", "/v1/scorer/foo", "responseCode", 204)));
+
+        final String json = JsonCodec.listJsonCodec(Event.class).toJson(events);
+
+        Request request = preparePost()
+                .setUri(urlFor("/v1/event"))
+                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
+                .setBodyGenerator(createStaticBodyGenerator(json, Charsets.UTF_8))
+                .build();
+
+        client.execute(request, createStatusResponseHandler()).checkedGet();
+
+        request = prepareGet()
+                .setUri(urlFor("/v1/event/stats"))
+                .build();
+        JsonResponse<Map<String, Integer>> response = client.execute(request, createFullJsonResponseHandler(STATS_CODEC)).checkedGet();
+
+        assertEquals(response.getStatusCode(), Status.OK.getStatusCode());
+        assertEquals(response.getValue(), ImmutableMap.of("HttpRequest", 3));
+
+        request = prepareDelete()
+                .setUri(urlFor("/v1/event/stats"))
+                .build();
+
+        assertEquals(client.execute(request, createStatusResponseHandler()).checkedGet().getStatusCode(), Status.NO_CONTENT.getStatusCode());
+
+        request = prepareGet()
+                .setUri(urlFor("/v1/event/stats"))
+                .build();
+        response = client.execute(request, createFullJsonResponseHandler(STATS_CODEC)).checkedGet();
+
+        assertEquals(response.getStatusCode(), Status.OK.getStatusCode());
+        assertEquals(response.getValue(), ImmutableMap.of());
     }
 
     private void failHttpScorerMonitor()
