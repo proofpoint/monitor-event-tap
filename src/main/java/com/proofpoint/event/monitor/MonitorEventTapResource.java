@@ -60,8 +60,10 @@ public class MonitorEventTapResource
 
         // Assumes batches are homogeneous
         String key = events.get(0).getType();
-        history.putIfAbsent(key, new AtomicInteger(0));
-        history.get(key).addAndGet(events.size());
+
+        ConcurrentMap<String, AtomicInteger> historyRef = this.history;
+        historyRef.putIfAbsent(key, new AtomicInteger(0));
+        historyRef.get(key).addAndGet(events.size());
     }
 
     @GET
