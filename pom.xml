@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.proofpoint.event</groupId>
     <artifactId>monitor-event-tap</artifactId>
-    <version>1.5.7</version>
+    <version>1.5.7-SNAPSHOT</version>
 
     <name>monitor-event-tap</name>
     <description>Simple threshold based event monitor</description>
