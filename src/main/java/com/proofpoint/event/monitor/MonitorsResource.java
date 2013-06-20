@@ -15,12 +15,12 @@
  */
 package com.proofpoint.event.monitor;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import org.codehaus.jackson.annotate.JsonProperty;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
