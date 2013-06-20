@@ -80,8 +80,8 @@ public class TestServer
 
     private HttpClient client;
     private TestingHttpServer server;
-    Monitor scorerHttpMonitor;
-    Monitor prsMessageMonitor;
+    private Monitor scorerHttpMonitor;
+    private Monitor prsMessageMonitor;
     private LifeCycleManager lifeCycleManager;
 
     @BeforeMethod
