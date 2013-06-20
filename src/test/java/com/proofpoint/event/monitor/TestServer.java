@@ -21,15 +21,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.inject.Binder;
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.util.Modules;
-import com.proofpoint.configuration.ConfigurationFactory;
-import com.proofpoint.configuration.ConfigurationModule;
+import com.proofpoint.bootstrap.Bootstrap;
+import com.proofpoint.bootstrap.LifeCycleManager;
 import com.proofpoint.discovery.client.DiscoveryModule;
 import com.proofpoint.http.client.ApacheHttpClient;
 import com.proofpoint.http.client.FullJsonResponseHandler.JsonResponse;
@@ -83,6 +82,7 @@ public class TestServer
     private TestingHttpServer server;
     Monitor scorerHttpMonitor;
     Monitor prsMessageMonitor;
+    private LifeCycleManager lifeCycleManager;
 
     @BeforeMethod
     public void setup()
@@ -92,7 +92,7 @@ public class TestServer
 
         final MBeanServer mockMBeanServer = mock(MBeanServer.class);
 
-        Injector injector = Guice.createInjector(
+        Bootstrap app = new Bootstrap(
                 new TestingNodeModule(),
                 new TestingHttpServerModule(),
                 new JsonModule(),
@@ -116,9 +116,14 @@ public class TestServer
                     {
                         binder.bind(Alerter.class).to(InMemoryAlerter.class).in(Scopes.SINGLETON);
                     }
-                },
-                new ConfigurationModule(new ConfigurationFactory(config)));
+                }
+        ).setRequiredConfigurationProperties(config);
 
+        Injector injector = app
+                .doNotInitializeLogging()
+                .initialize();
+
+        lifeCycleManager = injector.getInstance(LifeCycleManager.class);
         server = injector.getInstance(TestingHttpServer.class);
 
         Map<String, Monitor> monitors = newHashMap();
@@ -134,7 +139,6 @@ public class TestServer
         prsMessageMonitor = monitors.get("PrsMessageMonitor");
         Assert.assertNotNull(prsMessageMonitor);
 
-        server.start();
         client = new ApacheHttpClient(new HttpClientConfig());
     }
 
@@ -142,8 +146,8 @@ public class TestServer
     public void teardown()
             throws Exception
     {
-        if (server != null) {
-            server.stop();
+        if (lifeCycleManager != null) {
+            lifeCycleManager.stop();
         }
     }
 
@@ -292,7 +296,6 @@ public class TestServer
     }
 
     private void failHttpScorerMonitor()
-            throws Exception
     {
         for (int i = 0; i < 100; ++i) {
             scorerHttpMonitor.getEvents().tick();
