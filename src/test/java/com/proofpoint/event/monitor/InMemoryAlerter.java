@@ -21,7 +21,7 @@ import static com.google.common.collect.Lists.newArrayList;
 
 public class InMemoryAlerter implements Alerter
 {
-    private List<InMemoryAlert> alerts = newArrayList();
+    private final List<InMemoryAlert> alerts = newArrayList();
 
     public List<InMemoryAlert> getAlerts()
     {
@@ -42,9 +42,9 @@ public class InMemoryAlerter implements Alerter
 
     public static class InMemoryAlert
     {
-        private String name;
-        private boolean failed;
-        private String description;
+        private final String name;
+        private final boolean failed;
+        private final String description;
 
         public InMemoryAlert(String name, boolean failed, String description)
         {
